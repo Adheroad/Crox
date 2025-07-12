@@ -9,3 +9,5 @@
 ***
 ## Crox Development goals:
 + To support fuctions, variables, conditionals, etc.
+## How to run Crox:
+gcc -std=c99 -Wall -Wno-abi Crox.c mpc.c -ledit -lm -o Crox && ./Crox
