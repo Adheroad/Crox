@@ -147,6 +147,36 @@ char *readline(char *prompt)
     free(v);
   }
 
+  ari *ari_pop(ari * n, int i)
+  {
+    ari *x = n->cell[i];
+
+    memmove(&n->cell[i], &n->cell[i + 1], sizeof(ari *) * (n->count - i - 1));
+
+    n->count--;
+    if (n->count == 0)
+    {
+      free(n->cell);
+      n->cell = NULL;
+    }
+    else
+    {
+      ari **tmp = realloc(n->cell, sizeof(ari *) * n->count);
+      if (tmp)
+        n->cell = tmp;
+      // else keep old pointer to avoid losing memory
+    }
+
+    return x;
+  }
+
+  ari *ari_take(ari * n, int i)
+  {
+    ari *x = ari_pop(n, i);
+    ari_del(n);
+    return x;
+  }
+
   ari *ari_read_num(mpc_ast_t * t)
   {
     errno = 0;
@@ -176,188 +206,256 @@ char *readline(char *prompt)
     return v;
   }
 
-//   ari *ari_read(mpc_ast_t *t) {
-//   // If the node is a number, return a numeric ari
-//   if (strstr(t->tag, "number")) {
-//     return ari_read_num(t);
-//   }
-
-//   // If the node is a symbol, return a symbol ari
-//   if (strstr(t->tag, "symbol")) {
-//     return ari_sym(t->contents);
-//   }
-
-//   // Special case: unwrap top-level '>' if it has exactly one child that isn't noise
-//   if (strcmp(t->tag, ">") == 0) {
-//     int real_children = 0;
-//     int child_index = -1;
-
-//     for (int i = 0; i < t->children_num; i++) {
-//       if (strcmp(t->children[i]->tag, "regex") != 0 &&
-//           strcmp(t->children[i]->tag, "char") != 0) {
-//         real_children++;
-//         child_index = i;
-//       }
-//     }
-
-//     // If there's only one real child, return it directly
-//     if (real_children == 1) {
-//       return ari_read(t->children[child_index]);
-//     }
-//   }
-
-//   // For 'sexpr' or the top-level expression, wrap children in an S-expression
-//   ari *v = NULL;
-//   if (strcmp(t->tag, ">") == 0 || strstr(t->tag, "sexpr")) {
-//     v = ari_sexpr();
-//   }
-
-//   for (int i = 0; i < t->children_num; i++) {
-//     // Skip non-semantic nodes
-//     if (strcmp(t->children[i]->tag, "regex") == 0 ||
-//         strcmp(t->children[i]->tag, "char") == 0) {
-//       continue;
-//     }
-
-//     if (v) {
-//       v = ari_add(v, ari_read(t->children[i]));
-//     }
-//   }
-
-//   return v;
-// }
-
-
-ari *ari_read(mpc_ast_t *t) {
-  // If the node is a number, return a numeric ari
-  if (strstr(t->tag, "number")) {
-    return ari_read_num(t);
-  }
-
-  // If the node is a symbol, return a symbol ari
-  if (strstr(t->tag, "symbol")) {
-    return ari_sym(t->contents);
-  }
-
-  // Handle S-expressions (Polish notation) - keep original logic
-  if (strstr(t->tag, "sexpr")) {
-    ari *v = ari_sexpr();
-    for (int i = 0; i < t->children_num; i++) {
-      // Skip brackets and regex
-      if (strcmp(t->children[i]->contents, "[") == 0 ||
-          strcmp(t->children[i]->contents, "]") == 0 ||
-          strcmp(t->children[i]->tag, "regex") == 0) {
-        continue;
-      }
-      v = ari_add(v, ari_read(t->children[i]));
-    }
-    return v;
-  }
-
-  // Handle infix expressions - convert to S-expressions
-  if (strstr(t->tag, "expr") || strstr(t->tag, "term") || strstr(t->tag, "power")) {
-    // If it's a single child (no operators), just return the child
-    int non_regex_children = 0;
-    int last_child_index = -1;
-    
-    for (int i = 0; i < t->children_num; i++) {
-      if (strcmp(t->children[i]->tag, "regex") != 0 &&
-          strcmp(t->children[i]->tag, "char") != 0) {
-        non_regex_children++;
-        last_child_index = i;
+  ari *builtin_op(ari * n, char *op)
+  {
+    for (int i = 0; i < n->count; i++)
+    {
+      if (n->cell[i]->type != ARI_VAL)
+      {
+        ari_del(n);
+        return ari_err("Cannot operate on a non-number");
       }
     }
-    
-    // Single operand, no operator - just return the operand
-    if (non_regex_children == 1) {
-      return ari_read(t->children[last_child_index]);
-    }
-    
-    // Multiple children - we have an infix operation
-    // Find the operator and operands
-    ari *result = NULL;
-    ari *left = NULL;
-    char *operator = NULL;
-    
-    for (int i = 0; i < t->children_num; i++) {
-      if (strcmp(t->children[i]->tag, "regex") == 0) {
-        continue;
-      }
-      
-      // If it's a char node, it's an operator
-      if (strcmp(t->children[i]->tag, "char") == 0) {
-        operator = t->children[i]->contents;
-        continue;
-      }
 
-      
-      
-      // If we haven't found an operator yet, this is the left operand
-      if (!operator) {
-        left = ari_read(t->children[i]);
-      } else {
-        // We have an operator, this is the right operand
-        ari *right = ari_read(t->children[i]);
-        
-        // Create S-expression: (operator left right)
-        if (!result) {
-          result = ari_sexpr();
-          result = ari_add(result, ari_sym(operator));
-          result = ari_add(result, left);
-          result = ari_add(result, right);
-        } else {
-          // For expressions like "1 + 2 + 3", we need to handle left-associativity
-          // Convert to (+ (+ 1 2) 3)
-          ari *new_result = ari_sexpr();
-          new_result = ari_add(new_result, ari_sym(operator));
-          new_result = ari_add(new_result, result);
-          new_result = ari_add(new_result, right);
-          result = new_result;
+    ari *x = ari_pop(n, 0);
+
+    if (n->count == 0 && strcmp(op, "-") == 0)
+    {
+      x->val = -x->val;
+    }
+
+    while (n->count > 0)
+    {
+      ari *y = ari_pop(n, 0);
+
+      if (strcmp(op, "+") == 0)
+        x->val += y->val;
+      else if (strcmp(op, "*") == 0)
+        x->val *= y->val;
+      else if (strcmp(op, "-") == 0)
+        x->val -= y->val;
+      else if (strcmp(op, "/") == 0)
+      {
+        if (y->val == 0)
+        {
+          ari_del(y);
+          ari_del(x);
+          ari_del(n);
+          return ari_err("Division by zero not allowed");
         }
-        
-        left = NULL;  // Reset for next iteration
-        operator = NULL;
+        x->val /= y->val;
       }
+      else if (strcmp(op, "%") == 0)
+      {
+        if (y->val == 0)
+        {
+          ari_del(y);
+          ari_del(x);
+          ari_del(n);
+          return ari_err("Modulo by zero not allowed");
+        }
+        x->val = fmodl(x->val, y->val);
+      }
+      else if (strcmp(op, "log") == 0)
+      {
+        x->val = log(y->val) / log(x->val);
+      }
+      else if (strcmp(op, "^") == 0)
+      {
+        x->val = powl(x->val, y->val);
+      }
+      else
+      {
+        ari_del(y);
+        ari_del(x);
+        ari_del(n);
+        return ari_err("Unknown operator");
+      }
+
+      ari_del(y);
     }
-    
-    return result ? result : left;
+
+    ari_del(n);
+    return x;
   }
 
-  // Handle factors - mostly just unwrap parentheses
-  if (strstr(t->tag, "factor")) {
-    for (int i = 0; i < t->children_num; i++) {
-      if (strcmp(t->children[i]->contents, "(") == 0 ||
-          strcmp(t->children[i]->contents, ")") == 0 ||
-          strcmp(t->children[i]->tag, "regex") == 0) {
-        continue;
-      }
-      return ari_read(t->children[i]);
-    }
-  }
+  ari *ari_eval(ari * n);
 
-  // Special case: unwrap top-level '>' if it has exactly one child that isn't noise
-  if (strcmp(t->tag, ">") == 0) {
-    int real_children = 0;
-    int child_index = -1;
+  ari *ari_eval_sexpr(ari * n)
+  {
+    for (int i = 0; i < n->count; i++)
+    {
+      n->cell[i] = ari_eval(n->cell[i]);
 
-    for (int i = 0; i < t->children_num; i++) {
-      if (strcmp(t->children[i]->tag, "regex") != 0 &&
-          strcmp(t->children[i]->tag, "char") != 0) {
-        real_children++;
-        child_index = i;
+      if (n->cell[i]->type == ARI_ERR)
+      {
+        return ari_take(n, i);
       }
     }
 
-    // If there's only one real child, return it directly
-    if (real_children == 1) {
-      return ari_read(t->children[child_index]);
+    if (n->count == 0)
+    {
+      return n;
     }
+
+    if (n->count == 1)
+    {
+      return ari_take(n, 0);
+    }
+
+    ari *sym = ari_pop(n, 0);
+    if (sym->type != ARI_SYM)
+    {
+      ari_del(sym);
+      ari_del(n);
+      return ari_err("S-Expression must start with a symbol");
+    }
+
+    ari *result = builtin_op(n, sym->sym);
+    ari_del(sym);
+    return result;
   }
 
-  // Fallback - shouldn't reach here with proper grammar
-  return ari_err("Unknown AST node type");
-}
+  ari *ari_eval(ari * n)
+  {
+    if (n->type == ARI_SEXPR)
+      return ari_eval_sexpr(n);
+    return n;
+  }
 
+  ari *ari_read(mpc_ast_t * t)
+  {
+    // If the node is a number, return a numeric ari
+    if (strstr(t->tag, "number"))
+    {
+      return ari_read_num(t);
+    }
+
+    // If the node is a symbol, return a symbol ari
+    if (strstr(t->tag, "symbol"))
+    {
+      return ari_sym(t->contents);
+    }
+
+    // Handle S-expressions (Polish notation) - keep original logic
+    if (strstr(t->tag, "sexpr"))
+    {
+      ari *v = ari_sexpr();
+      for (int i = 0; i < t->children_num; i++)
+      {
+        // Skip brackets and regex
+        if (strcmp(t->children[i]->contents, "[") == 0 ||
+            strcmp(t->children[i]->contents, "]") == 0 ||
+            strcmp(t->children[i]->tag, "regex") == 0)
+        {
+          continue;
+        }
+        v = ari_add(v, ari_read(t->children[i]));
+      }
+      return v;
+    }
+
+    // Handle infix expressions - convert to S-expressions
+    if (strstr(t->tag, "expr") || strstr(t->tag, "term") || strstr(t->tag, "power"))
+    {
+
+      ari *result = NULL;
+      ari *left = NULL;
+      char *operator = NULL;
+
+      for (int i = 0; i < t->children_num; i++)
+      {
+        if (strcmp(t->children[i]->tag, "regex") == 0)
+        {
+          continue;
+        }
+
+        // If it's a char node, it's an operator
+        if (strcmp(t->children[i]->tag, "char") == 0)
+        {
+          operator = t->children[i]->contents;
+          continue;
+        }
+
+        // If we haven't found an operator yet, this is the left operand
+        if (!operator)
+        {
+          left = ari_read(t->children[i]);
+        }
+        else
+        {
+          // We have an operator, this is the right operand
+          ari *right = ari_read(t->children[i]);
+
+          // Create S-expression: (operator left right)
+          if (!result)
+          {
+            result = ari_sexpr();
+            result = ari_add(result, ari_sym(operator));
+            result = ari_add(result, left);
+            result = ari_add(result, right);
+          }
+          else
+          {
+            // For expressions like "1 + 2 + 3", we need to handle left-associativity
+            // Convert to (+ (+ 1 2) 3)
+            ari *new_result = ari_sexpr();
+            new_result = ari_add(new_result, ari_sym(operator));
+            new_result = ari_add(new_result, result);
+            // new_result = ari_add(result, new_result);
+            new_result = ari_add(new_result, right);
+            result = new_result;
+          }
+
+          left = NULL; // Reset for next iteration
+          operator = NULL;
+        }
+      }
+
+      return result ? result : left;
+    }
+
+    // Handle factors - mostly just unwrap parentheses
+    if (strstr(t->tag, "factor"))
+    {
+      for (int i = 0; i < t->children_num; i++)
+      {
+        if (strcmp(t->children[i]->contents, "(") == 0 ||
+            strcmp(t->children[i]->contents, ")") == 0 ||
+            strcmp(t->children[i]->tag, "regex") == 0)
+        {
+          continue;
+        }
+        return ari_read(t->children[i]);
+      }
+    }
+
+    // // Special case: unwrap top-level '>' if it has exactly one child that isn't noise
+    if (strcmp(t->tag, ">") == 0)
+    {
+      int real_children = 0;
+      int child_index = -1;
+
+      for (int i = 0; i < t->children_num; i++)
+      {
+        if (strcmp(t->children[i]->tag, "regex") != 0 &&
+            strcmp(t->children[i]->tag, "char") != 0)
+        {
+          real_children++;
+          child_index = i;
+        }
+      }
+
+      // If there's only one real child, return it directly
+      if (real_children == 1)
+      {
+        return ari_read(t->children[child_index]);
+      }
+    }
+
+    // Fallback - shouldn't reach here with proper grammar
+    return ari_err("Unknown AST node type");
+  }
 
   void ari_print(ari * v);
   void ari_exp_print(ari * v)
@@ -372,6 +470,7 @@ ari *ari_read(mpc_ast_t *t) {
     }
     putchar(']');
   }
+
   // to print
   void ari_print(ari * n)
   {
@@ -542,20 +641,22 @@ ari *ari_read(mpc_ast_t *t) {
      */
 
     mpca_lang(MPCA_LANG_DEFAULT,
-              "number     : /-?[0-9]+(\\.[0-9]+)?/ ;"                         // numbers and decimals
-              "symbol     : '+' | '-' | '*' | '/' | '%' | '^' | \"log\" ;"    // operators and functions
-              "sexpr      : '[' <symbol> <sfactor>* ']' ;"                    // S-expressions: [operator operands...]
-              "sfactor      : <number> | <sexpr> | <expr> ;"                  // S-expr elements: numbers, nested S-exprs, or infix
-              "expr       : <term> (('+' | '-') <term>)* ;"                   // handles +/- with precedence
-              "term       : <power> (('*' | '/' | '%') <power>)* ;" // handles * / % with precedence
-              "power      : <factor> ('^' <power>)? ;"                        // RIGHT-ASSOCIATIVE power
-              "factor     : <number> | <sexpr> | '(' <expr> ')' ;"            // numbers, S-exprs, and grouping
-              "croxParser : /^/ <expr> /$/ ;",                                // main parser
+              "number     : /-?[0-9]+(\\.[0-9]+)?/ ;"                      // numbers and decimals
+              "symbol     : '+' | '-' | '*' | '/' | '%' | '^' | \"log\" ;" // operators and functions
+              "sexpr      : '[' <symbol> <sfactor>* ']' ;"                 // S-expressions: [operator operands...]
+              "sfactor      : <number> | <sexpr> | <expr> ;"               // S-expr elements: numbers, nested S-exprs, or infix
+              "expr       : <term> (('+' | '-') <term>)* ;"                // handles +/- with precedence
+              "term       : <power> (('*' | '/' | '%') <power>)* ;"        // handles * / % with precedence
+              "power      : <factor> ('^' <power>)? ;"                     // RIGHT-ASSOCIATIVE power
+              "factor     : <number> | <sexpr> | '(' <expr> ')' ;"         // numbers, S-exprs, and grouping
+              "croxParser : /^/ <expr> /$/ ;",                             // main parser
               Number, Symbol, Sexpr, Sfactor, Expression, Term, Power, Factor, CroxParser);
 
     puts("Welcome! You are using Crox.");
     puts("A terribly useless language to solve none of your problems.");
     puts("You are using version: 0.0.0.4");
+    // printf("sizeof(ari) = %zu\n", sizeof(ari));
+    // printf("sizeof(long double) = %zu\n", sizeof(long double));
 
     while (1)
     {
@@ -572,9 +673,14 @@ ari *ari_read(mpc_ast_t *t) {
         // Evaluation of the ast using eval function
         // ari result = eval(a->children[1]);
         // print(result);
-        ari *result = ari_read(r.output);
+        // ari *result = ari_read(r.output);
+        // ari_println(result);
+        // ari_del(result);
+
+        ari *result = ari_eval(ari_read(r.output));
         ari_println(result);
         ari_del(result);
+
         /*
           We can use thr fullowing function to print the ast tree.
            mpc_ast_print(a);
@@ -593,7 +699,7 @@ ari *ari_read(mpc_ast_t *t) {
     }
 
     // Clear up the parsers after use
-    mpc_cleanup(8, Number, Symbol, Sexpr, Sfactor, Expression, Term, Power, Factor, CroxParser);
+    mpc_cleanup(9, Number, Symbol, Sexpr, Sfactor, Expression, Term, Power, Factor, CroxParser);
 
     return 0;
   }
