@@ -1,3 +1,7 @@
+<picture>
+  <source srcset="https://raw.githubusercontent.com/Adheroad/Crox/main/crox.svg" type="image/svg+xml" />
+  <img src="https://raw.githubusercontent.com/Adheroad/Crox/main/crox.png" alt="Crox Logo" width="40%" height="50%" />
+</picture>
 # Crox  
 **A tiny Lisp-like language in C**  
 
