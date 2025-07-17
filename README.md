@@ -3,17 +3,17 @@
     <source srcset="https://raw.githubusercontent.com/Adheroad/Crox/main/assets/crox_flipped.svg" type="image/svg+xml" />
     <img src="https://raw.githubusercontent.com/Adheroad/Crox/main/assets/crox_flipped.png" alt="Crox Logo" width="24%" height="25%" />
   </picture>
-  <picture>
-    <source srcset="https://raw.githubusercontent.com/Adheroad/Crox/main/crox.svg" type="image/svg+xml" />
-    <img src="https://raw.githubusercontent.com/Adheroad/Crox/main/crox.png" alt="Crox Logo" width="24%" height="25%" />
-  </picture>
    <picture>
-    <source srcset="https://raw.githubusercontent.com/Adheroad/Crox/main/crox_flipped.svg" type="image/svg+xml" />
-    <img src="https://raw.githubusercontent.com/Adheroad/Crox/main/crox_flipped.png" alt="Crox Logo" width="24%" height="25%" />
+    <source srcset="https://raw.githubusercontent.com/Adheroad/Crox/main/assets/crox.svg" type="image/svg+xml" />
+    <img src="https://raw.githubusercontent.com/Adheroad/Crox/main/assets/crox.png" alt="Crox Logo" width="24%" height="25%" />
+  </picture>
+<picture>
+    <source srcset="https://raw.githubusercontent.com/Adheroad/Crox/main/assets/crox_flipped.svg" type="image/svg+xml" />
+    <img src="https://raw.githubusercontent.com/Adheroad/Crox/main/assets/crox_flipped.png" alt="Crox Logo" width="24%" height="25%" />
   </picture>
   <picture>
-    <source srcset="https://raw.githubusercontent.com/Adheroad/Crox/main/crox.svg" type="image/svg+xml" />
-    <img src="https://raw.githubusercontent.com/Adheroad/Crox/main/crox.png" alt="Crox Logo" width="24%" height="25%" />
+    <source srcset="https://raw.githubusercontent.com/Adheroad/Crox/main/assets/crox.svg" type="image/svg+xml" />
+    <img src="https://raw.githubusercontent.com/Adheroad/Crox/main/assets/crox.png" alt="Crox Logo" width="24%" height="25%" />
   </picture>
     
 </div>
