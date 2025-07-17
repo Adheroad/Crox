@@ -28,7 +28,7 @@ int main(void) {
     puts("You are using version: 0.0.0.4");
 
     while (1) {
-        char *input = readline("\033[m\033[31mcrox -> \033[0m");
+        char *input = readline("\033[m\033[31mCrox -> \033[0m");
         if (!input) break;
         add_history(input);
 

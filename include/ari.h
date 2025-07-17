@@ -13,7 +13,7 @@ typedef struct ari {
   int count;
 
   union {
-    long double val; // ARI_VAL
+    double val;      // ARI_VAL
     char *sym;       // ARI_SYM
     char *err;       // ARI_ERR
   };
@@ -22,7 +22,7 @@ typedef struct ari {
 } ari;
 
 // Constructors
-ari *ari_val(long double x);
+ari *ari_val(double x);
 ari *ari_err(char *err);
 ari *ari_sym(char *sym);
 ari *ari_sexpr(void);

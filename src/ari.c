@@ -2,7 +2,7 @@
 #include <string.h>
 #include "../include/ari.h"
 
-ari *ari_val(long double x) {
+ari *ari_val(double x) {
   ari *n = malloc(sizeof(ari));
   n->type = ARI_VAL;
   n->val = x;
