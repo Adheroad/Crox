@@ -22,6 +22,12 @@
 
 **A tiny Lisp-like language in C**
 
+<video width="600" controls>
+  <source src="assets/crox.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+
 _“A terribly useless language to solve none of your problems.”_  
 ~Anshul Dhawan
 
