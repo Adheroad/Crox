@@ -44,9 +44,8 @@ void parser_init(void) {
   mpca_lang(
       MPCA_LANG_DEFAULT,
       "number     : /-?[0-9]+(\\.[0-9]+)?/ ;"
-      "symbol     : '+' | '-' | '*' | '/' | '%' | '^' | \"log\" |  "
-      "\"list\" | \"head\" | \"unhead\" | \"tail\"| \"untail\" | \"join\" "
-      "| \"eval\" | \"cons\" | \"conlast\" | \"len\" | \"init\" | \"uninit\" ;"
+      "symbol     : /[a-zA-Z0-9_+*^%\\/\\\\=<>!&.-]+/ ;"
+      // "symbol     : /[a-zA-Z0-9_+-*^%/=<>!&.]+/ ;"
       "sexpr      : '[' <symbol> <sfactor>* ']' ;"
       "qexpr      : '{' <symbol>? <sfactor>* '}' ;"
       "sfactor    : <number> | <sexpr> | <qexpr> | <expr> ;"

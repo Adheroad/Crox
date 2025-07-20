@@ -1,21 +1,25 @@
-#include <string.h>
-#include <math.h>
-#include "../include/macros.h"
 #include "../include/eval.h"
 #include "../include/ari.h"
+#include "../include/macros.h"
+#include <math.h>
+#include <string.h>
 
-
-ari *ari_eval(ari *n) {
+ari *ari_eval(anv *e, ari *n) {
+  if (!e || !n)
+    return NULL;
+  if (n->type == ARI_SYM) {
+    ari *x = anv_get(e, n);
+    ari_del(n);
+    return x;
+  }
   if (n->type == ARI_SEXPR)
-    return ari_eval_sexpr(n);
+    return ari_eval_sexpr(e, n);
   return n;
 }
 
-
-ari *ari_eval_sexpr(ari *n) {
+ari *ari_eval_sexpr(anv *e, ari *n) {
   for (int i = 0; i < n->count; i++) {
-    n->cell[i] = ari_eval(n->cell[i]);
-
+    n->cell[i] = ari_eval(e, n->cell[i]);
     if (n->cell[i]->type == ARI_ERR) {
       return ari_take(n, i);
     }
@@ -29,53 +33,60 @@ ari *ari_eval_sexpr(ari *n) {
     return ari_take(n, 0);
   }
 
-  ari *sym = ari_pop(n, 0);
-  if (sym->type != ARI_SYM) {
-    ari_del(sym);
+  ari *fun = ari_pop(n, 0);
+  if (fun->type != ARI_FUN) {
+    ari_del(fun);
     ari_del(n);
-    return ari_err("S-Expression must start with a symbol");
+    return ari_err("first no is not a function");
   }
 
-  ari *result = builtin(n, sym->sym);
-  ari_del(sym);
+  ari *result = fun->func(e, n);
+  ari_del(fun);
   return result;
 }
 
-
-ari *builtin(ari *a, char *func) {
-  if (strcmp("list", func) == 0) {
-    return builtin_list(a);
-  } else if (strcmp("head", func) == 0) {
-    return builtin_head(a);
-  } else if (strcmp("unhead", func) == 0) {
-    return builtin_unhead(a);
-  } else if (strcmp("tail", func) == 0) {
-    return builtin_tail(a);
-  } else if (strcmp("untail", func) == 0) {
-    return builtin_untail(a);
-  } else if (strcmp("join", func) == 0) {
-    return builtin_join(a);
-  } else if (strcmp("eval", func) == 0) {
-    return builtin_eval(a);
-  } else if (strcmp("len", func) == 0) {
-    return builtin_len(a);
-  } else if (strcmp("cons", func) == 0) {
-    return builtin_cons(a);
-  } else if (strcmp("conlast", func) == 0) {
-    return builtin_conlast(a);
-  } else if (strcmp("init", func) == 0) {
-    return builtin_init(a);
-  } else if (strcmp("uninit", func) == 0) {
-    return builtin_uninit(a);
-  } else {
-    return builtin_op(a, func);
+void anv_add_builtin(anv *e, char *name, abuiltin func) {
+  if (!e || !name || !func)
+    return;
+  ari *n = ari_sym(name);
+  ari *fun = ari_fun(func);
+  if (!n || !fun) {
+    if (n)
+      ari_del(n);
+    if (fun)
+      ari_del(fun);
+    return;
   }
-  ari_del(a);
-  return ari_err("Unknown Function!");
+  anv_put(e, n, fun);
+  ari_del(n);
+  ari_del(fun);
 }
 
+void builtins(anv *e) {
+  // mathematical builtins
+  anv_add_builtin(e, "+", builtin_add);
+  anv_add_builtin(e, "-", builtin_del);
+  anv_add_builtin(e, "*", builtin_mul);
+  anv_add_builtin(e, "/", builtin_div);
+  anv_add_builtin(e, "%", builtin_mod);
+  anv_add_builtin(e, "^", builtin_pow);
+  anv_add_builtin(e, "log", builtin_log);
 
-ari *builtin_op(ari *n, char *op) {
+  anv_add_builtin(e, "list", builtin_list);
+  anv_add_builtin(e, "eval", builtin_eval);
+  anv_add_builtin(e, "head", builtin_head);
+  anv_add_builtin(e, "tail", builtin_tail);
+  anv_add_builtin(e, "unhead", builtin_unhead);
+  anv_add_builtin(e, "untail", builtin_untail);
+  anv_add_builtin(e, "len", builtin_len);
+  anv_add_builtin(e, "cons", builtin_cons);
+  anv_add_builtin(e, "conlast", builtin_conlast);
+  anv_add_builtin(e, "init", builtin_init);
+  anv_add_builtin(e, "uninit", builtin_uninit);
+  anv_add_builtin(e, "join", builtin_join);
+}
+
+ari *builtin_op(anv *e, ari *n, char *op) {
   for (int i = 0; i < n->count; i++) {
     if (n->cell[i]->type != ARI_VAL) {
       ari_del(n);
@@ -132,6 +143,13 @@ ari *builtin_op(ari *n, char *op) {
   return x;
 }
 
+ari *builtin_log(anv *e, ari *n) { return builtin_op(e, n, "log"); }
+ari *builtin_add(anv *e, ari *n) { return builtin_op(e, n, "+"); }
+ari *builtin_del(anv *e, ari *n) { return builtin_op(e, n, "-"); }
+ari *builtin_mul(anv *e, ari *n) { return builtin_op(e, n, "*"); }
+ari *builtin_div(anv *e, ari *n) { return builtin_op(e, n, "/"); }
+ari *builtin_mod(anv *e, ari *n) { return builtin_op(e, n, "%"); }
+ari *builtin_pow(anv *e, ari *n) { return builtin_op(e, n, "^"); }
 
 ari *ari_cons(ari *val, ari *qexpr) {
   ari *result = ari_qexpr();
@@ -145,7 +163,6 @@ ari *ari_cons(ari *val, ari *qexpr) {
   return result;
 }
 
-
 ari *ari_join(ari *x, ari *y) {
 
   /* For each cell in 'y' add it to 'x' */
@@ -158,8 +175,7 @@ ari *ari_join(ari *x, ari *y) {
   return x;
 }
 
-
-ari* builtin_head(ari *a) {
+ari *builtin_head(anv *e, ari *a) {
   ARISSERT(a, a->count == 1, "Function 'head' passed too many arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
            "Function 'head' passed incorrect type!");
@@ -172,7 +188,7 @@ ari* builtin_head(ari *a) {
   return v;
 }
 
-ari *builtin_unhead(ari *a) {
+ari *builtin_unhead(anv *e, ari *a) {
   ARISSERT(a, a->count == 1, "Function 'unhead' passed too many arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
            "Function 'unhead' passed incorrect type!");
@@ -183,7 +199,7 @@ ari *builtin_unhead(ari *a) {
   return v;
 }
 
-ari *builtin_tail(ari *a) {
+ari *builtin_tail(anv *e, ari *a) {
   ARISSERT(a, a->count == 1, "Function 'tail' passed too many arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
            "Function 'tail' passed incorrect type!");
@@ -198,7 +214,7 @@ ari *builtin_tail(ari *a) {
   return v;
 }
 
-ari *builtin_untail(ari *a) {
+ari *builtin_untail(anv *e, ari *a) {
   ARISSERT(a, a->count == 1, "Function 'untail' passed too many arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
            "Function 'untail' passed incorrect type!");
@@ -213,24 +229,22 @@ ari *builtin_untail(ari *a) {
   return v;
 }
 
-ari *builtin_list(ari *a) {
+ari *builtin_list(anv *e, ari *a) {
   a->type = ARI_QEXPR;
   return a;
 }
 
-ari *builtin_eval(ari *a) {
+ari *builtin_eval(anv *e, ari *a) {
   ARISSERT(a, a->count == 1, "Function 'eval' passed too many arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
            "Function 'eval' passed incorrect type!");
 
   ari *x = ari_take(a, 0);
   x->type = ARI_SEXPR;
-  return ari_eval(x);
+  return ari_eval(e, x);
 }
 
-
-
-ari *builtin_join(ari *a) {
+ari *builtin_join(anv *e, ari *a) {
 
   for (int i = 0; i < a->count; i++) {
     ARISSERT(a, a->cell[i]->type == ARI_QEXPR,
@@ -247,9 +261,7 @@ ari *builtin_join(ari *a) {
   return x;
 }
 
-
-
-ari *builtin_cons(ari *a) {
+ari *builtin_cons(anv *e, ari *a) {
   ARISSERT(a, a->count >= 2, "Function 'cons' needs at least two arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_VAL,
            "Function 'cons' must start with a value.");
@@ -269,7 +281,7 @@ ari *builtin_cons(ari *a) {
   return x;
 }
 
-ari *builtin_conlast(ari *a) {
+ari *builtin_conlast(anv *e, ari *a) {
   ARISSERT(a, a->count >= 2,
            "Function 'conlast' needs at least two arguments!");
   ARISSERT(a, a->cell[a->count - 1]->type == ARI_VAL,
@@ -292,7 +304,7 @@ ari *builtin_conlast(ari *a) {
   return q;
 }
 
-ari *builtin_len(ari *a) {
+ari *builtin_len(anv *e, ari *a) {
   ARISSERT(a, a->count == 1, "Function 'len' passed too many arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
            "Function 'len' passed incorrect type!");
@@ -302,7 +314,7 @@ ari *builtin_len(ari *a) {
   return ari_val(count);
 }
 
-ari *builtin_init(ari *a) {
+ari *builtin_init(anv *e, ari *a) {
   ARISSERT(a, a->count == 1, "Function 'init' passed too many arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
            "Function 'init' passed incorrect type!");
@@ -327,7 +339,7 @@ ari *builtin_init(ari *a) {
   return q;
 }
 
-ari *builtin_uninit(ari *a) {
+ari *builtin_uninit(anv *e, ari *a) {
   ARISSERT(a, a->count == 1, "Function 'uninit' passed too many arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
            "Function 'uninit' passed incorrect type!");

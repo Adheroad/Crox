@@ -4,28 +4,39 @@
 #include "ari.h"
 
 // core eval
-ari *ari_eval(ari *n);
-ari* ari_eval_sexpr(ari* n);
+ari *ari_eval(anv *e, ari *n);
+ari *ari_eval_sexpr(anv *e, ari *n);
 
 // builtin helpers
 ari *ari_join(ari *x, ari *y);
 ari *ari_cons(ari *val, ari *qexpr);
 
 // builtins
-ari *builtin(ari *a, char *func);
-ari *builtin_op(ari *n, char *op);
+void builtins(anv *e);
+ari *builtin_op(anv *e, ari *n, char *op);
+void anv_add_builtin(anv* e, char* name, abuiltin fun);
 
-ari *builtin_list(ari *a);
-ari *builtin_eval(ari *a);
-ari *builtin_head(ari *a);
-ari *builtin_tail(ari *a);
-ari *builtin_unhead(ari *a);
-ari *builtin_untail(ari *a);
-ari *builtin_len(ari *a);
-ari *builtin_cons(ari *a);
-ari *builtin_conlast(ari *a);
-ari *builtin_init(ari *a);
-ari *builtin_uninit(ari *a);
-ari* builtin_join(ari* a);
+// builrin for ops
+ari *builtin_add(anv *e, ari *n);
+ari *builtin_del(anv *e, ari *n);
+ari *builtin_mul(anv *e, ari *n);
+ari *builtin_div(anv *e, ari *n);
+ari *builtin_mod(anv *e, ari *n);
+ari *builtin_pow(anv *e, ari *n);
+ari *builtin_log(anv *e, ari *n);
+
+// builtin for funcs
+ari *builtin_list(anv *e, ari *a);
+ari *builtin_eval(anv *e, ari *a);
+ari *builtin_head(anv *e, ari *a);
+ari *builtin_tail(anv *e, ari *a);
+ari *builtin_unhead(anv *e, ari *a);
+ari *builtin_untail(anv *e, ari *a);
+ari *builtin_len(anv *e, ari *a);
+ari *builtin_cons(anv *e, ari *a);
+ari *builtin_conlast(anv *e, ari *a);
+ari *builtin_init(anv *e, ari *a);
+ari *builtin_uninit(anv *e, ari *a);
+ari *builtin_join(anv *e, ari *a);
 
 #endif

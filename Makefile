@@ -27,6 +27,10 @@ $(TARGET): $(SRC_FILES)
 run: $(TARGET)
 	./$(TARGET)
 
+#testing the file
+test: $(TARGET)
+	./$(TARGET) test/test.crox
+
 # Clean target
 clean:
 	rm -f $(TARGET)
