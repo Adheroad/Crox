@@ -87,7 +87,7 @@ sudo dnf install gcc readline-devel make
 ### Demo:
 
 ```
-$ make run
+$ make run // `make test` for automatic texting or you can `make` then .Crox test/`YOUR_FILE_NAME.crox`
 Crox -> 1 + 2 ^ 3 ^ 2 // infix notation
 513
 
