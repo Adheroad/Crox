@@ -12,6 +12,7 @@ mpc_parser_t *Power;
 mpc_parser_t *Factor;
 mpc_parser_t *Statement;
 mpc_parser_t *CroxParser;
+mpc_parser_t *Command;
 
 // Initialize the grammar
 void parser_init(void) {
@@ -26,6 +27,7 @@ void parser_init(void) {
   Factor = mpc_new("factor");
   Statement = mpc_new("statement");
   CroxParser = mpc_new("croxParser");
+  Command = mpc_new("command");
 
   /*
    * This here defines my language
@@ -45,22 +47,41 @@ void parser_init(void) {
       MPCA_LANG_DEFAULT,
       "number     : /-?[0-9]+(\\.[0-9]+)?/ ;"
       "symbol     : /[a-zA-Z0-9_+*^%\\/\\\\=<>!&.-]+/ ;"
-      // "symbol     : /[a-zA-Z0-9_+-*^%/=<>!&.]+/ ;"
       "sexpr      : '[' <symbol> <sfactor>* ']' ;"
-      "qexpr      : '{' <symbol>? <sfactor>* '}' ;"
-      "sfactor    : <number> | <sexpr> | <qexpr> | <expr> ;"
+      "qexpr      : '{' <symbol>* <sfactor>* '}' ;"
+      "sfactor    : <number> | <symbol>| <sexpr> | <qexpr> | <expr> ;"
       "expr       : <term> (('+' | '-') <term>)* ;"
       "term       : <power> (('*' | '/' | '%') <power>)* ;"
       "power      : <factor> ('^' <power>)? ;"
-      "factor     : <number> | <sexpr> | <qexpr> | '(' <expr> ')' ;"
-      "statement  : <expr> | <sexpr> | <qexpr> | <symbol> <sfactor>* ;"
+    //   "command    : <symbol> (<qexpr> | <sfactor>)* ;"
+    //   "statement  : <command> | <expr> | <sexpr> | <qexpr> | <symbol> "
+    //   "<sfactor>* ;"
+    //   "factor     : <number> | <symbol> | <sexpr> | <qexpr> | '(' <expr> ')' ;"
+        "factor     : <number> | <sexpr> | <qexpr> | '(' <expr> ')' ;"
+        "statement  : <expr> | <sexpr> | <qexpr> | <symbol> <sfactor>* ;"
       "croxParser : /^/ <statement> /$/ ;",
-      Number, Symbol, Sexpr, Qexpr, Sfactor, Expression, Term, Power, Factor,
+      Number, Symbol, Sexpr, Qexpr, Sfactor, Expression, Term, Power, Command, Factor,
       Statement, CroxParser);
 }
 
+// mpca_lang(
+//     MPCA_LANG_DEFAULT,
+//     "number     : /-?[0-9]+(\\.[0-9]+)?/ ;"
+//     "symbol     : /[a-zA-Z0-9_+*^%\\/\\\\=<>!&.-]+/ ;"
+//     "sexpr      : '[' <symbol> <sfactor>* ']' ;"
+//     "qexpr      : '{' <symbol>* <sfactor>* '}' ;"
+//     "sfactor    : <number> | <symbol> | <sexpr> | <qexpr> | <expr> ;"
+//     "expr       : '(' <term> (('+' | '-') <term>)* ')';"
+//     "term       : <power> (('*' | '/' | '%') <power>)* ;"
+//     "power      : <factor> ('^' <power>)? ;"
+//     "factor     : <number> | <symbol> | <sexpr> | <qexpr> | '(' <expr> ')' ;"
+//     "statement  : <sexpr> | <qexpr> | <symbol> <sfactor>* | <expr> ;"  // REORDERED: <expr> LAST
+//     "croxParser : /^/ <statement> /$/ ;",
+//     Number, Symbol, Sexpr, Qexpr, Sfactor, Expression, Term, Power, Factor, Statement, CroxParser);
+// }
+
 // Cleanup
 void parser_cleanup(void) {
-  mpc_cleanup(11, Number, Symbol, Sexpr, Qexpr, Sfactor, Expression, Term,
-              Power, Factor, Statement, CroxParser);
+  mpc_cleanup(12, Number, Symbol, Sexpr, Qexpr, Sfactor, Expression, Term,
+              Power, Factor, Command, Statement, CroxParser);
 }

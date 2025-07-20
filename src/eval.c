@@ -426,24 +426,24 @@ ari *builtin_uninit(anv *e, ari *a) {
 }
 
 ari *builtin_def(anv *e, ari *a) {
+    ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
+             "Function 'def' passed incorrect type!"
+             "\n\033[0;34mGot %s, Expected %s.",
+             atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
 
-  ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
-           "Function 'uninit' passed incorrect type!"
-           "\n\033[0;34mGot %s, Expected %s.",
-           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
+    ari *syms = a->cell[0];
+    for (int i = 0; i < syms->count; i++) {
+        ARISSERT(a, syms->cell[i]->type == ARI_SYM, "Cannot define without symbol");
+    }
 
-  ari *syms = a->cell[0];
-  for (int i = 0; i < syms->count; i++) {
-    ARISSERT(a, syms->cell[i]->type == ARI_SYM, "Cannot define without symbol")
-  }
+    ARISSERT(a, syms->count == a->count - 1,
+             "Function 'def' cannot define incorrect "
+             "number of values to symbols");
 
-  ARISSERT(a, syms->count == a->count - 1,
-           "Function 'def' cannot define incorrect "
-           "number of values to symbols");
-
-  for (int i = 0; i < syms->count; i++) {
-    anv_put(e, syms->cell[i], a->cell[i + 1]);
-  }
-  ari_del(a);
-  return ari_sexpr();
+    for (int i = 0; i < syms->count; i++) {
+        anv_put(e, syms->cell[i], a->cell[i + 1]);
+    }
+    
+    ari_del(a);
+    return ari_sexpr();
 }
