@@ -40,5 +40,6 @@ ari *builtin_conlast(anv *e, ari *a);
 ari *builtin_init(anv *e, ari *a);
 ari *builtin_uninit(anv *e, ari *a);
 ari *builtin_join(anv *e, ari *a);
+ari *builtin_def(anv* e, ari* a);
 
 #endif
