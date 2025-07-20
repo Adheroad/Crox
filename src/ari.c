@@ -1,8 +1,9 @@
-#include <stdlib.h>
-#include <string.h>
 #include "../include/ari.h"
 #include "../include/eval.h"
-
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 ari *ari_val(double x) {
   ari *n = malloc(sizeof(ari));
   n->type = ARI_VAL;
@@ -12,13 +13,33 @@ ari *ari_val(double x) {
   return n;
 }
 
-ari *ari_err(char *err) {
+ari *ari_err(char *fmt, ...) {
   ari *n = malloc(sizeof(ari));
+  if (n == NULL) {
+    fprintf(stderr, "Crox FATAL ERROR: Out of memory during error creation " "(ari object)!\n");
+    exit(1);
+  }
   n->type = ARI_ERR;
-  n->err = malloc(strlen(err) + 1);
-  strcpy(n->err, err);
   n->count = 0;
   n->cell = NULL;
+  va_list va;
+  va_start(va, fmt);
+  n->err = malloc(512);
+  if (n->err == NULL) {
+    fprintf(stderr, "Crox FATAL ERROR: Out of memory during error creation "
+                    "(error string)!\n");
+    free(n);
+    exit(1);
+  }
+  vsnprintf(n->err, 512, fmt, va);
+  char *temp_err = realloc(n->err, strlen(n->err) + 1);
+  if (temp_err == NULL) {
+    fprintf(stderr, "Crox WARNING: Failed to reallocate error string to exact "
+                    "size. Using larger buffer.\n");
+  } else {
+    n->err = temp_err;
+  }
+  va_end(va);
   return n;
 }
 
@@ -215,7 +236,7 @@ ari *anv_get(anv *e, ari *k) {
       return ari_copy(e->list[i]);
     }
   }
-  return ari_err("Symbol not found");
+  return ari_err("Symbol not found '%s'", k->sym);
 }
 
 void anv_put(anv *e, ari *k, ari *v) {
@@ -235,11 +256,11 @@ void anv_put(anv *e, ari *k, ari *v) {
   e->sym = realloc(e->sym, sizeof(char *) * e->count);
 
   if (!e->list || !e->sym)
-    return ;
+    return;
 
   e->list[e->count - 1] = ari_copy(v);
   e->sym[e->count - 1] = malloc(strlen(k->sym) + 1);
   if (!e->sym[e->count - 1])
-    return ;
+    return;
   strcpy(e->sym[e->count - 1], k->sym);
 }

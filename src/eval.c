@@ -45,6 +45,25 @@ ari *ari_eval_sexpr(anv *e, ari *n) {
   return result;
 }
 
+char *atype_name(int t) {
+  switch (t) {
+  case ARI_FUN:
+    return "Function";
+  case ARI_VAL:
+    return "Number";
+  case ARI_ERR:
+    return "Error";
+  case ARI_SYM:
+    return "Symbol";
+  case ARI_SEXPR:
+    return "S-Expression";
+  case ARI_QEXPR:
+    return "Q-Expression";
+  default:
+    return "Unknown";
+  }
+}
+
 void anv_add_builtin(anv *e, char *name, abuiltin func) {
   if (!e || !name || !func)
     return;
@@ -176,9 +195,14 @@ ari *ari_join(ari *x, ari *y) {
 }
 
 ari *builtin_head(anv *e, ari *a) {
-  ARISSERT(a, a->count == 1, "Function 'head' passed too many arguments!");
+  ARISSERT(a, a->count == 1,
+           "Function 'head' passed too many arguments. "
+           "\n\033[0;34mGot %i, Expected %i.",
+           a->count, 1);
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
-           "Function 'head' passed incorrect type!");
+           "Function 'head' passed incorrect type!"
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
   ARISSERT(a, a->cell[0]->count != 0, "Function 'head' passed {}!");
 
   ari *v = ari_take(a, 0);
@@ -189,9 +213,14 @@ ari *builtin_head(anv *e, ari *a) {
 }
 
 ari *builtin_unhead(anv *e, ari *a) {
-  ARISSERT(a, a->count == 1, "Function 'unhead' passed too many arguments!");
+  ARISSERT(a, a->count == 1,
+           "Function 'unhead' passed too many arguments!"
+           "\n\033[0;34mGot %i, Expected %i.",
+           a->count, 1);
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
-           "Function 'unhead' passed incorrect type!");
+           "Function 'unhead' passed incorrect type!"
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
   ARISSERT(a, a->cell[0]->count != 0, "Function 'unhead' passed {}!");
 
   ari *v = ari_take(a, 0);
@@ -200,9 +229,14 @@ ari *builtin_unhead(anv *e, ari *a) {
 }
 
 ari *builtin_tail(anv *e, ari *a) {
-  ARISSERT(a, a->count == 1, "Function 'tail' passed too many arguments!");
+  ARISSERT(a, a->count == 1,
+           "Function 'tail' passed too many arguments!"
+           "\n\033[0;34mGot %i, Expected %i.",
+           a->count, 1);
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
-           "Function 'tail' passed incorrect type!");
+           "Function 'tail' passed incorrect type!"
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
   ARISSERT(a, a->cell[0]->count != 0, "Function 'tail' passed {}!");
 
   ari *v = ari_take(a, 0);
@@ -215,9 +249,14 @@ ari *builtin_tail(anv *e, ari *a) {
 }
 
 ari *builtin_untail(anv *e, ari *a) {
-  ARISSERT(a, a->count == 1, "Function 'untail' passed too many arguments!");
+  ARISSERT(a, a->count == 1,
+           "Function 'untail' passed too many arguments!"
+           "\n\033[0;34mGot %i, Expected %i.",
+           a->count, 1);
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
-           "Function 'untail' passed incorrect type!");
+           "Function 'untail' passed incorrect type!"
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
   ARISSERT(a, a->cell[0]->count != 0, "Function 'untail' passed {}!");
 
   // Take the Q-expression from the argument
@@ -235,9 +274,14 @@ ari *builtin_list(anv *e, ari *a) {
 }
 
 ari *builtin_eval(anv *e, ari *a) {
-  ARISSERT(a, a->count == 1, "Function 'eval' passed too many arguments!");
+  ARISSERT(a, a->count == 1,
+           "Function 'eval' passed too many arguments!"
+           "\n\033[0;34mGot %i, Expected %i.",
+           a->count, 1);
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
-           "Function 'eval' passed incorrect type!");
+           "Function 'eval' passed incorrect type!"
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
 
   ari *x = ari_take(a, 0);
   x->type = ARI_SEXPR;
@@ -248,7 +292,9 @@ ari *builtin_join(anv *e, ari *a) {
 
   for (int i = 0; i < a->count; i++) {
     ARISSERT(a, a->cell[i]->type == ARI_QEXPR,
-             "Function 'join' passed incorrect type.");
+             "Function 'join' passed incorrect type."
+             "\n\033[0;34mGot %s, Expected %s.",
+             atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
   }
 
   ari *x = ari_pop(a, 0);
@@ -264,7 +310,9 @@ ari *builtin_join(anv *e, ari *a) {
 ari *builtin_cons(anv *e, ari *a) {
   ARISSERT(a, a->count >= 2, "Function 'cons' needs at least two arguments!");
   ARISSERT(a, a->cell[0]->type == ARI_VAL,
-           "Function 'cons' must start with a value.");
+           "Function 'cons' must start with a value."
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
 
   for (int i = 1; i < a->count; i++) {
     ARISSERT(a, a->cell[i]->type == ARI_QEXPR,
@@ -285,7 +333,9 @@ ari *builtin_conlast(anv *e, ari *a) {
   ARISSERT(a, a->count >= 2,
            "Function 'conlast' needs at least two arguments!");
   ARISSERT(a, a->cell[a->count - 1]->type == ARI_VAL,
-           "Function 'conlast' must end with a value.");
+           "Function 'conlast' must end with a value."
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
 
   for (int i = 0; i < a->count - 1; i++) {
     ARISSERT(a, a->cell[i]->type == ARI_QEXPR,
@@ -305,9 +355,14 @@ ari *builtin_conlast(anv *e, ari *a) {
 }
 
 ari *builtin_len(anv *e, ari *a) {
-  ARISSERT(a, a->count == 1, "Function 'len' passed too many arguments!");
+  ARISSERT(a, a->count == 1,
+           "Function 'len' passed too many arguments!"
+           "\n\033[0;34mGot %i, Expected %i.",
+           a->count, 1);
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
-           "Function 'len' passed incorrect type!");
+           "Function 'len' passed incorrect type!"
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
 
   int count = a->cell[0]->count;
   ari_del(a);
@@ -315,9 +370,14 @@ ari *builtin_len(anv *e, ari *a) {
 }
 
 ari *builtin_init(anv *e, ari *a) {
-  ARISSERT(a, a->count == 1, "Function 'init' passed too many arguments!");
+  ARISSERT(a, a->count == 1,
+           "Function 'init' passed too many arguments!"
+           "\n\033[0;34mGot %i, Expected %i.",
+           a->count, 1);
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
-           "Function 'init' passed incorrect type!");
+           "Function 'init' passed incorrect type!"
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
   ARISSERT(a, a->cell[0]->count >= 2,
            "Function 'init' needs at least two elements!");
 
@@ -340,9 +400,14 @@ ari *builtin_init(anv *e, ari *a) {
 }
 
 ari *builtin_uninit(anv *e, ari *a) {
-  ARISSERT(a, a->count == 1, "Function 'uninit' passed too many arguments!");
+  ARISSERT(a, a->count == 1,
+           "Function 'uninit' passed too many arguments!"
+           "\n\033[0;34mGot %i, Expected %i.",
+           a->count, 1);
   ARISSERT(a, a->cell[0]->type == ARI_QEXPR,
-           "Function 'uninit' passed incorrect type!");
+           "Function 'uninit' passed incorrect type!"
+           "\n\033[0;34mGot %s, Expected %s.",
+           atype_name(a->cell[0]->type), atype_name(ARI_QEXPR));
   ARISSERT(a, a->cell[0]->count >= 2,
            "Function 'uninit' needs at least two elements!");
 

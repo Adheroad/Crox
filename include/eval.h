@@ -7,6 +7,8 @@
 ari *ari_eval(anv *e, ari *n);
 ari *ari_eval_sexpr(anv *e, ari *n);
 
+char* atype_name(int t);
+
 // builtin helpers
 ari *ari_join(ari *x, ari *y);
 ari *ari_cons(ari *val, ari *qexpr);

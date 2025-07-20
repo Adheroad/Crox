@@ -34,7 +34,7 @@ struct anv {
 
 // Constructors
 ari *ari_val(double x);
-ari *ari_err(char *err);
+ari *ari_err(char *fmt, ...);
 ari *ari_sym(char *sym);
 ari *ari_sexpr(void);
 ari *ari_qexpr(void);
