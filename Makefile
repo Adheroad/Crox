@@ -29,7 +29,7 @@ run: $(TARGET)
 
 #testing the file
 test: $(TARGET)
-	./$(TARGET) test/test.crox
+	./$(TARGET) test/$(FILE)
 
 # Clean target
 clean:

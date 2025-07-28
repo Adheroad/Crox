@@ -78,11 +78,13 @@ sudo dnf install gcc readline-devel make
 ### Clone & Build:
 
 1. Clone the repo:
-   `git clone https://github.com/Adheroad/Crox.git`
+	`git clone https://github.com/Adheroad/Crox.git`
 2. Get inside the folder
-   `cd Crox`
+	`cd Crox`
 3. Build and run the interpreter:
-   `make run`
+	`make run`
+4. To run tests make a .crox file and put it in test/ directory and run the following command:
+	`make test FILE={your_file_name}.crox` 
 
 ### Demo:
 
