@@ -13,4 +13,3 @@ def {x y} 1 2
 [+ x y]
 def {x y z} 1 2 3
 [+ x y z]
-x + y + z

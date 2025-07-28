@@ -15,7 +15,7 @@ extern mpc_parser_t *Power;
 extern mpc_parser_t *Factor;
 extern mpc_parser_t *Statement;
 extern mpc_parser_t *CroxParser;
-extern mpc_parser_t *Command;
+extern mpc_parser_t *Operator;
 
 // Setup and teardown
 void parser_init(void);

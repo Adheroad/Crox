@@ -108,6 +108,21 @@ Crox -> { 1 2 [* 3 4]}
 
 Crox -> join {1 2} [head [init [join {[eval {+ 1 2 3 4}]} {2 3}]]]
 {1 2 2}
+
+Crox -> def {y} 20 // using Q-Expr Property to declare a variable
+[]
+
+Crox -> def {x} 30
+[]
+
+Crox -> [+ x y] // Arithmetic operations can be done on variables like simple datatypes
+50
+
+Crox -> def {x y z} 1 2 3
+[]
+
+Crox -> [+ x y z]
+6
 ```
 
 ---
@@ -147,7 +162,7 @@ The code is divided into three subfolders: include, lib, and src.
 - [x] Polish notation
 - [x] S-Expressions
 - [x] Q-Expressions (code as data)
-- [ ] variables
+- [x] variables
 - [ ] functions
 - [ ] conditionals
 - [ ] strings
